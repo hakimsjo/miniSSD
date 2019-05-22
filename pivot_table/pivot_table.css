@@ -1,0 +1,95 @@
+/*****************************************************************************
+ pivot_table.css
+ 
+******************************************************************************
+ Written in 2004 by 
+    Brian Douglas Skinner <brian.skinner@gumption.org>
+  
+ Copyright rights relinquished under the Creative Commons  
+ Public Domain Dedication:
+    http://creativecommons.org/licenses/publicdomain/
+  
+ You can copy freely from this file.  This work may be freely reproduced, 
+ distributed, transmitted, used, modified, built upon, or otherwise exploited
+ by anyone for any purpose.
+  
+ This work is provided on an "AS IS" basis, without warranties or conditions 
+ of any kind, either express or implied, including, without limitation, any 
+ warranties or conditions of title, non-infringement, merchantability, or 
+ fitness for a particular purpose. You are solely responsible for determining 
+ the appropriateness of using or distributing the work and assume all risks 
+ associated with use of this work, including but not limited to the risks and 
+ costs of errors, compliance with applicable laws, damage to or loss of data 
+ or equipment, and unavailability or interruption of operations.
+
+ In no event shall the authors or contributors have any liability for any 
+ direct, indirect, incidental, special, exemplary, or consequential damages,
+ however caused and on any theory of liability, whether in contract, strict 
+ liability, or tort (including negligence), arising in any way out of or in 
+ connection with the use or distribution of the work.
+*****************************************************************************/
+
+.pivotTable {
+    font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+    font-size: 13px;
+    background: #D7D8DB;
+    border: 1px solid #B9C9FE;
+}
+
+.pivotTable th {
+    padding: 2px 10px 2px 10px;
+    
+    font-weight: normal;
+    border-bottom: 1px solid #DEDEDE;
+}
+
+.pivotTable .even,.odd {
+    background: #EDEEF0;
+    padding: 2px 10px 2px 10px;
+    text-align: right;
+    color: #669;
+    border: 1px solid #B9C9FE;
+}
+
+h4
+{
+    color: #9E9D9D;    
+}
+
+ body {
+        background-color: #eee;
+      }
+
+      /* Custom container */
+      .container-narrow {
+        margin: 0 auto;
+        max-width: 700px;
+        background-color: White;
+        padding: 40px;
+        box-shadow: 0px 0px 10px silver;
+      }
+      .container-narrow > hr {
+        margin: 30px 0;
+      }
+
+      /* Main marketing message and sign up button */
+      .jumbotron {
+        margin: 60px 0;
+        text-align: center;
+      }
+      .jumbotron h1 {
+        font-size: 72px;
+        line-height: 1;
+      }
+      .jumbotron .btn {
+        font-size: 21px;
+        padding: 14px 24px;
+      }
+
+      /* Supporting marketing content */
+      .marketing {
+        margin: 60px 0;
+      }
+      .marketing p + h4 {
+        margin-top: 28px;
+      }

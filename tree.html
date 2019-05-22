@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Menu</title>
+	<script type="text/javascript" src="lib/jquery.js"></script>
+	<script type="text/javascript" src="lib/jquery.cookie.js"></script>
+	<script type="text/javascript" src="lib/jquery.hotkeys.js"></script>
+	<script type="text/javascript" src="jquery.jstree.js"></script>
+	<!-- Pivot table -->
+	<script type="text/javascript" src="./PivotTable/data_vortex.js"></script>
+	<script type="text/javascript" src="./PivotTable/pivot_table.js"></script>
+	<script type="text/javascript" src="./PivotTable/pivot_utils.js"></script>
+	<link rel="stylesheet" type="text/css" href="./PivotTable/pivot_table.css" />
+ 	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.1/themes/base/jquery-ui.css" />
+
+	<script src="http://code.jquery.com/ui/1.10.1/jquery-ui.js"></script>  
+    <link href="./bootstrap/css/bootstrap-responsive.css" rel="stylesheet" />
+
+
+
+</head>
+<body>
+<div id="tabs">
+    <ul>
+        <li><a href="#tabs-2">Menu</a></li>
+        <li><a href="#tabs-1">Table</a></li>
+
+    </ul>
+
+    <div id="tabs-1">
+        <h4 id="axis-table-title"></h4>
+        <div id="axis-table"></div>
+    </div>
+        <div id="tabs-2">
+        <div id="axis-menu"></div>
+    </div>
+   
+</div>
+</body>
+<script type="text/javascript">
+document.body.style.zoom = "100%" ;
+    //var ROOT_URL = "http://172.17.0.233/api/v1/sv/ssd_extern/";
+    var ROOT_URL = "http://api.scb.se/OV0104/v1/doris/sv/ssd/";
+	$(function () {
+        
+		$.support.cors = true;
+
+		$("#axis-menu").jstree({
+		"json_data" : {
+		"ajax" : {
+			"url" : function( node ){
+					  // lets figure out the url - this function needs to
+					  // return the formed URL. If "node" is "-1" then
+					  // this is the top of the hierarchy and there's no parent
+					  // key. Otherwise, node is a jquery object of
+					  // the respective node from which we can fish out the
+					  // metadata needed. (added below at "metadata" : op )
+					  if( node == -1 ){
+						return ROOT_URL
+					  } else {
+						return ROOT_URL + node.data( "id" );
+					  }
+					},
+			"type" : "get",  // this is a GET not a POST
+			"success" : function(ops) {
+				  // this is called when the AJAX request is successful. "ops"
+				  // contains the returned data from the server, which in
+				  // my case is a json object containing an array of objects.
+				  data = []
+				  // go through data and create an array of objects to be given
+				  // to jsTree just like when you're creating a static jsTree.
+				  for( opnum in ops ){
+					var op = ops[opnum]
+					if (op.type=="t")
+					{
+						node = {
+							"id" : op.id,
+							"data" : op.text,
+							"metadata" :  op ,
+							// THIS LINE BELOW IS THE MAGIC KEY!!! This will force
+							//  jsTree to consider the node
+							// openable and thus issue a new AJAX call hen the
+							// user clicks on the little "+" symbol or
+							// whatever opens nodes in your theme
+							attr: { "class" : "jstree-leaf" }
+						}        
+					} 
+					else
+					{
+						node = {
+						"id" : op.id,
+						"data" : op.text,
+						"metadata" :  op ,
+						// THIS LINE BELOW IS THE MAGIC KEY!!! This will force
+						//  jsTree to consider the node
+						// openable and thus issue a new AJAX call hen the
+						// user clicks on the little "+" symbol or
+						// whatever opens nodes in your theme
+						"state" : "closed"
+						}
+					
+					}
+					
+					data.push( node );
+				  }
+				  return data; // this will return the formed array
+							   // "data" to jsTree which will turn
+							   // it into a list of nodes and
+							   // insert it into the tree.
+			},
+			 "error" : function(ops) {alert(ops);}
+		 },
+	  },
+	  "core" : {"html_titles" : true,  "load_open" : true },
+	  "plugins" : [ "themes", "json_data", "ui", "cookies", "crrm", "sort" ]
+  }).bind("select_node.jstree", function (event, data) {
+	var n = data.rslt.obj;
+	if (data.inst.get_json()[0].metadata.type=="t")
+	{ 
+		get_axis_meta(n.data("id")); 
+	}
+});
+
+        $( "#tabs" ).tabs({ active: 0 }).addClass( "ui-tabs-vertical ui-helper-clearfix" );
+        //$( "#tabs li" ).removeClass( "ui-corner-top" ).addClass( "ui-corner-left" );
+
+	});
+
+	function get_axis_meta(tbl_id) 
+	{
+		$.get(ROOT_URL + tbl_id, function(data) {
+
+			  var queries = [];
+			  //var values = [];
+			  var query = {};
+
+			  for( varno in data.variables ){
+					
+					var variable = data.variables[varno];
+						 
+
+					var val_count = Math.min(variable.values.length, 50);
+					var values = []; //new Array(val_count);
+					for (var i = 0; i < val_count; i++)
+					{
+						values.push(variable.values[i]);                    
+					}
+					query = {"code": variable.code , "selection" : {"filter":"item", "values" : values} };
+					queries.push(query);
+					
+			  }
+			  var requestX = {"query":queries, "response" : {"format" : "json"} };
+
+              $.support.cors = true;
+			  PIVOT_UTILS.createPivotTableFromUrl(ROOT_URL + tbl_id, requestX, "axis-table");
+              $("#tabs").tabs({ active: 1 });
+              $("#axis-table-title").text(data.title);
+			
+		}, "json");
+	}
+</script>
+</html>
