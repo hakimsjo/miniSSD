@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <title>SSD Demo App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- CSS -->
+	<link rel="stylesheet" type="text/css" href="./css/pivot_table.css">
+    <link href="./css/axis.css" rel="stylesheet">
+
+	<!-- libs -->
+    <script type="text/javascript" src="./lib/jquery.min.js"></script>
+    <script type="text/javascript" src="./lib/data_vortex.js"></script>
+	<script type="text/javascript" src="./lib/pivot_table.js"></script>
+    <script type="text/javascript" src="./lib/pivot_utils.js"></script>
+    
+  </head>
+
+  <body>
+
+  <div>
+  <div id="navigationPanel">
+          <a id="homeButton" class="btn">Home</a>
+          <a id="backButton" class="btn">Back</a>
+      </div>
+  <br>
+  <ul id="theList"></ul>
+
+  <b id="axis-table-title"></b>
+  <div id="axis-table"></div>
+
+  <div id="loadingDiv" style="display: none;"><br><b>Loading...</b></div>
+  </div>
+      <fieldset>
+			<legend></legend>
+			<ul id="valuesList" class="checklist">	
+			</ul>
+		</fieldset>
+
+
+      <br>
+      <div id="selectionPanel" style="display: none;">
+          <a id="selectValuesButton" class="btn">Select</a>
+      </div>
+      <br>
+      <div id="navigationPanel">
+          <a id="homeButton2" class="btn">Home</a>
+          <a id="backButton2" class="btn">Back</a>
+      </div>
+	 
+ 	<script type="text/javascript">
+		var maxValue = getParameterStingValue('maxValue');
+		alert('max: '+maxValue);
+	</script> 
+
+    <script type="text/javascript">
+
+        var ROOT_URL = "https://api.scb.se/OV0104/v1/doris/sv/ssd";
+        var CURRENT_URL = "";
+        var CURRENT_TABLE = null;
+        var CURRENT_SELECTION = null;
+        var CURRENT_SELECTION_VARIABLE = null;
+
+        $(function () {
+            $('#loadingDiv')
+            .hide()  // hide it initially
+            .ajaxStart(function () {
+                $(this).show();
+            })
+            .ajaxStop(function () {
+                $(this).hide();
+            });
+
+            $.support.cors = true;
+            LoadMenuItems("");
+            $('#selectionPanel').hide().click(
+                function () {
+                    $('#selectionPanel').hide();
+
+                    CURRENT_SELECTION[CURRENT_SELECTION_VARIABLE] = [];
+
+                    $(".checklist input:checkbox").each(
+                        function (i) {
+                            if ($(this).attr("checked") == "checked") {
+                                CURRENT_SELECTION[CURRENT_SELECTION_VARIABLE].push($(this).attr("value"));
+                            }
+                        });
+
+                    $('#valuesList').empty();
+                    ReloadAxisTable();
+                    $('#navigationPanel').show();
+                    CURRENT_SELECTION_VARIABLE = null;
+                });
+
+            $('#homeButton').click(
+                function () {
+                    CURRENT_URL = "";
+                    LoadMenuItems("");
+                    $('#axis-table-title').empty();
+                    $('#axis-table').empty();
+                });
+ 
+            $('#backButton').click(
+            function () {
+                PopBack();
+                var id = PopBack();
+                LoadMenuItems(id);
+                $('#axis-table-title').empty();
+                $('#axis-table').empty();
+
+            });
+
+            $(".checklist").click(
+                function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var e = e.target || e.srcElement;
+                    var item = $(e).closest('li');
+                    var chk = $(item).find(":checkbox").first().attr("checked");
+                    if (chk == "checked") {
+                        $(item).removeClass("selected");
+                        $(item).find(":checkbox").first().removeAttr("checked");
+                    }
+                    else {
+                        $(item).addClass("selected");
+                        var x = $(item).find(":checkbox");
+                        x.first().attr("checked", "checked");
+                    }
+
+                });
+        });
+
+
+        function PopBack() {
+            var index = CURRENT_URL.lastIndexOf("/");
+            if (index > -1) {
+                var id = CURRENT_URL.substring(index + 1);
+                var tmp = CURRENT_URL.substring(0, index);
+
+                CURRENT_URL = tmp;
+                return id;
+            }
+            else {
+                //CURRENT_URL = "";
+                return "";
+            }
+        }
+
+        function LoadMenuItems(id) {
+            if (CURRENT_URL.indexOf("/", CURRENT_URL.length - 1) !== -1) {
+                CURRENT_URL = CURRENT_URL + id;
+            }
+            else {
+                CURRENT_URL = CURRENT_URL + "/" + id;
+            }
+            var url = ROOT_URL + CURRENT_URL;
+            $('#theList').empty();
+
+            $.get(url, function (data) {
+
+                for (var i = 0; i < data.length; i++) {
+                    var $newItem;
+                    if (data[i].type == "l") {
+                        $newItem = $('<li><a class="menuItem" href="#" id="' + data[i].id + '">' + data[i].text + '</a></li>')
+                    }
+                    else {
+                        $newItem = $('<li><a class="tableItem" href="#" id="' + data[i].id + '">' + data[i].text + '</a></li>')
+                    }
+                    $('#theList').append($newItem);
+                }
+                $(".menuItem").click(function () {
+                    LoadMenuItems(this.id);
+                    return false;
+                });
+                $(".tableItem").click(function () {
+                    LoadAxisTable(this.id);
+                    return false;
+                });
+            });
+        }
+
+
+        function ReloadAxisTable()
+        {
+            var queries = [];
+            //var values = [];
+            var query = {};
+
+            for (varno in CURRENT_TABLE.variables) {
+
+                var variable = CURRENT_TABLE.variables[varno];
+                query = { "code": variable.code, "selection": { "filter": "item", "values": CURRENT_SELECTION[variable.code] } };
+                queries.push(query);
+            }
+            var requestX = { "query": queries, "response": { "format": "json" } };
+
+            $.support.cors = true;
+            PIVOT_UTILS.createPivotTableFromUrl(ROOT_URL + CURRENT_URL, requestX, "axis-table", selectValues);
+            $("#axis-table-title").text(CURRENT_TABLE.title);
+        }
+
+        function LoadAxisTable(tbl_id) {
+            if (CURRENT_URL.indexOf("/", CURRENT_URL.length - 1) !== -1) {
+                CURRENT_URL = CURRENT_URL + tbl_id;
+            }
+            else {
+                CURRENT_URL = CURRENT_URL + "/" + tbl_id;
+            }
+
+            $('#theList').empty();
+            $.get(ROOT_URL + CURRENT_URL, function (data) {
+                CURRENT_TABLE = data;
+
+                var queries = [];
+                //var values = [];
+                var query = {};
+
+                CURRENT_SELECTION = new Array();
+                for (varno in data.variables) {
+
+                    var variable = data.variables[varno];
+                    var val_count = Math.min(variable.values.length, 5);
+                    var values = []; //new Array(val_count);
+                    for (var i = 0; i < val_count; i++) {
+                        values.push(variable.values[i]);
+                    }
+                    query = { "code": variable.code, "selection": { "filter": "item", "values": values } };
+                    queries.push(query);
+                    CURRENT_SELECTION[variable.code] = values;
+                }
+                var requestX = { "query": queries, "response": { "format": "json" } };
+
+                $.support.cors = true;
+                PIVOT_UTILS.createPivotTableFromUrl(ROOT_URL + CURRENT_URL, requestX, "axis-table", selectValues);
+                $("#axis-table-title").text(data.title);
+                
+
+            }, "json");
+        }
+
+        function selectValues(variable)
+        {
+            $.each(CURRENT_TABLE.variables, function (i, v) {
+                if (v.text == variable) {
+                    CURRENT_SELECTION_VARIABLE = v.code;
+                    $('#axis-table').empty();
+                    $.each(v.values, function (j, val) {
+
+                        var my_li = $('<li>');
+                        var my_input = $('<input name="' + val + '" value="' + val + '" type="checkbox" id="' + val + '"/>');
+                        $.each(CURRENT_SELECTION[v.code], function (k, sv) {
+                            if (val == sv) {
+                                my_input.attr("checked", "checked");
+                                $(my_li).addClass("selected");
+                            }
+                        });
+                        var my_label = $('<label for="' + val + '">' + v.valueTexts[j] + '</label>');
+                        $(my_li).append(my_input);
+                        $(my_li).append(my_label);
+                        $(".checklist").append(my_li);
+
+                    });
+                };
+                $('#selectionPanel').show();
+                $('#navigationPanel').hide();
+            });
+
+        }
+
+    </script>
+
+   </body>
+</html>
