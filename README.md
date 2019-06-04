@@ -4,3 +4,5 @@ This minimalistik Statistics database project shows how you can use the API from
 All countries using PXWeb kan use this in the same way.
 ## Installation
 Just clone the project and click the index.html file. :)
+## Quickview
+https://htmlpreview.github.io/?https://github.com/hakimsjo/miniSSD/blob/master/index.html
